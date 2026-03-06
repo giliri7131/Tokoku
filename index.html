@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TokoKu V6 Pro Max</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hidden { display: none !important; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
+        .active-nav { color: #f97316; transform: translateY(-5px); transition: all 0.3s ease; }
+        ::-webkit-scrollbar { width: 0; }
+        .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .owner-badge { background: linear-gradient(45deg, #f97316, #fb923c); }
+        .verified-badge { color: #38bdf8; font-size: 12px; margin-left: 4px; }
+        .category-pill.active { background-color: #f97316; color: white; border-color: #f97316; }
+    </style>
+</head>
+<body class="bg-[#0f0f0f] font-sans text-gray-200 pb-32">
+
+    <header class="bg-[#1a1a1a] p-5 sticky top-0 z-50 shadow-2xl border-b border-white/5">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-orange-500 p-2 rounded-xl shadow-lg shadow-orange-500/20">
+                    <i class="fa-solid fa-shop text-white text-lg"></i>
+                </div>
+                <h1 class="font-black text-2xl tracking-tighter text-white">Toko<span class="text-orange-500">Ku</span></h1>
+            </div>
+            <div id="user-display-top" class="text-[10px] font-black bg-white/5 px-4 py-2 rounded-full border border-white/10 text-orange-500 tracking-wider uppercase"></div>
+        </div>
+    </header>
+
+    <div class="max-w-md mx-auto p-4">
+        
+        <section id="auth-section" class="mt-10 bg-[#1a1a1a] p-8 rounded-[2.5rem] shadow-2xl border border-white/5">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-black italic">SELAMAT DATANG</h2>
+                <p class="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Silahkan masuk ke akunmu</p>
+            </div>
+            <div class="flex justify-center mb-8 bg-black/40 p-1.5 rounded-2xl border border-white/5">
+                <button onclick="toggleAuthMode('login')" id="btn-mode-login" class="flex-1 py-3 rounded-xl font-bold bg-orange-500 text-white transition-all shadow-lg">Masuk</button>
+                <button onclick="toggleAuthMode('register')" id="btn-mode-reg" class="flex-1 py-3 rounded-xl font-bold text-gray-500 transition-all">Daftar</button>
+            </div>
+            <div id="auth-form" class="space-y-4">
+                <div class="relative">
+                    <i class="fa-solid fa-at absolute left-4 top-4 text-orange-500"></i>
+                    <input type="text" id="tele-user" placeholder="Username Telegram" class="w-full bg-black/40 border border-white/5 p-4 pl-12 rounded-2xl focus:border-orange-500 outline-none text-white transition-all">
+                </div>
+                <div class="relative">
+                    <i class="fa-solid fa-lock absolute left-4 top-4 text-orange-500"></i>
+                    <input type="password" id="tele-pass" placeholder="Password" class="w-full bg-black/40 border border-white/5 p-4 pl-12 rounded-2xl focus:border-orange-500 outline-none text-white transition-all">
+                </div>
+                <button onclick="handleAuth()" id="main-auth-btn" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-black shadow-xl shadow-orange-500/20 active:scale-95 transition-all uppercase tracking-widest mt-4">Masuk Sekarang</button>
+            </div>
+        </section>
+
+        <section id="admin-section" class="hidden mb-10 space-y-6 animate-pop">
+            <div id="stock-alert" class="hidden bg-red-500/20 border border-red-500 text-red-500 p-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-3">
+                <i class="fa-solid fa-triangle-exclamation animate-pulse"></i> PERINGATAN: ADA PRODUK YANG STOKNYA HABIS!
+            </div>
+
+            <div class="bg-[#1a1a1a] p-6 rounded-[2.5rem] shadow-xl border-l-4 border-orange-500 w-full">
+                <div class="flex justify-between items-start mb-6">
+                    <h2 class="font-black flex items-center gap-3 text-white uppercase italic tracking-wider text-xs">
+                        <i class="fa-solid fa-screwdriver-wrench text-orange-500"></i> PANEL KELOLA TOKO
+                    </h2>
+                    <button onclick="resetDataTotal()" class="bg-red-500/10 text-red-500 text-[9px] font-black px-3 py-1.5 rounded-lg border border-red-500/20 hover:bg-red-500 hover:text-white transition-all">
+                        <i class="fa-solid fa-trash-can mr-1"></i> RESET DATA
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <input type="hidden" id="edit-id">
+                    <input type="text" id="prod-name" placeholder="Nama Produk" class="w-full bg-black/40 p-5 rounded-2xl border border-white/5 focus:border-orange-500 outline-none text-sm">
+                    
+                    <div class="flex gap-3">
+                        <input type="number" id="prod-price" placeholder="Harga (Rp)" class="w-[65%] bg-black/40 p-5 rounded-2xl border border-white/5 focus:border-orange-500 outline-none text-sm">
+                        <input type="number" id="prod-stock" placeholder="Stok" class="w-[35%] bg-black/40 p-5 rounded-2xl border border-white/5 focus:border-orange-500 outline-none text-sm">
+                    </div>
+
+                    <select id="prod-category" class="w-full bg-black/40 p-5 rounded-2xl border border-white/5 focus:border-orange-500 outline-none text-sm text-gray-400">
+                        <option value="Umum">Pilih Kategori</option>
+                        <option value="Digital">Digital</option>
+                        <option value="Fashion">Fashion</option>
+                        <option value="Makanan">Makanan</option>
+                        <option value="Elektronik">Elektronik</option>
+                    </select>
+
+                    <textarea id="prod-desc" placeholder="Deskripsi lengkap produk..." class="w-full bg-black/40 p-5 rounded-2xl border border-white/5 h-32 focus:border-orange-500 outline-none text-sm"></textarea>
+                    
+                    <label class="flex items-center justify-center gap-3 bg-black/40 p-5 rounded-2xl border border-dashed border-white/20 cursor-pointer hover:border-orange-500 transition-all">
+                        <i class="fa-solid fa-cloud-arrow-up text-orange-500"></i>
+                        <span class="text-[10px] text-gray-400 font-black uppercase tracking-widest">UPLOAD FOTO</span>
+                        <input type="file" id="prod-img" accept="image/*" class="hidden">
+                    </label>
+
+                    <div class="flex gap-3 pt-2">
+                        <button onclick="uploadProduct()" id="btn-save" class="flex-[4] bg-orange-500 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-95 transition-all text-xs">Simpan Produk</button>
+                        <button onclick="resetAdminForm()" class="flex-1 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-rotate-right"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#1a1a1a] p-6 rounded-[2.5rem] border border-white/5 w-full">
+                <h2 class="font-bold mb-5 text-orange-500 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em]"><i class="fa-solid fa-cart-plus"></i> INPUT TRANSAKSI PEMBELI</h2>
+                <div class="space-y-3">
+                    <input type="text" id="trx-user" placeholder="Username Pembeli" class="w-full bg-black/40 p-4 rounded-xl border border-white/5 text-xs outline-none focus:border-orange-500">
+                    <div class="flex gap-2">
+                        <input type="number" id="trx-prod-id" placeholder="ID Produk" class="w-1/2 bg-black/40 p-4 rounded-xl border border-white/5 text-xs outline-none focus:border-orange-500">
+                        <input type="number" id="trx-qty" placeholder="Jumlah Beli" class="w-1/2 bg-black/40 p-4 rounded-xl border border-white/5 text-xs outline-none focus:border-orange-500">
+                    </div>
+                    <button onclick="addManualTransaction()" class="w-full bg-white text-black py-4 rounded-xl font-black text-[10px] uppercase active:scale-90 transition-transform">TAMBAH RIWAYAT</button>
+                </div>
+            </div>
+
+            <div class="bg-[#1a1a1a] p-6 rounded-[2.5rem] border border-white/5 w-full">
+                <h2 class="font-bold mb-5 text-orange-500 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em]"><i class="fa-solid fa-bullhorn"></i> TAGIH REVIEW (RNK)</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="target-user" placeholder="Username" class="w-[50%] bg-black/40 p-4 rounded-xl border border-white/5 text-xs outline-none focus:border-orange-500">
+                    <input type="number" id="target-prod-id" placeholder="ID Produk" class="w-[30%] bg-black/40 p-4 rounded-xl border border-white/5 text-xs outline-none focus:border-orange-500">
+                    <button onclick="assignBuyer()" class="w-[20%] bg-white text-black rounded-xl font-black text-[10px] uppercase active:scale-90 transition-transform">Kirim</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="shop-section" class="hidden">
+            <div class="bg-gradient-to-r from-orange-600/20 to-transparent p-5 rounded-3xl border border-orange-500/20 mb-8">
+                <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy"></i> TOP 10 PENJUAL TERATAS
+                </h3>
+                <div id="leaderboard-list" class="space-y-2"></div>
+            </div>
+
+            <div class="relative mb-6">
+                <i class="fa-solid fa-magnifying-glass absolute left-5 top-5 text-gray-500"></i>
+                <input type="text" id="search-input" oninput="renderProducts()" placeholder="Cari barang impianmu..." class="w-full bg-[#1a1a1a] p-5 pl-14 rounded-3xl border border-white/5 focus:border-orange-500 outline-none text-sm shadow-xl">
+            </div>
+
+            <div class="flex gap-3 overflow-x-auto pb-4 mb-4 no-scrollbar">
+                <button onclick="filterCategory('Semua')" class="category-pill active border border-white/10 px-6 py-2 rounded-full text-[10px] font-black uppercase whitespace-nowrap transition-all">Semua</button>
+                <button onclick="filterCategory('Digital')" class="category-pill border border-white/10 px-6 py-2 rounded-full text-[10px] font-black uppercase whitespace-nowrap transition-all">Digital</button>
+                <button onclick="filterCategory('Fashion')" class="category-pill border border-white/10 px-6 py-2 rounded-full text-[10px] font-black uppercase whitespace-nowrap transition-all">Fashion</button>
+                <button onclick="filterCategory('Makanan')" class="category-pill border border-white/10 px-6 py-2 rounded-full text-[10px] font-black uppercase whitespace-nowrap transition-all">Makanan</button>
+                <button onclick="filterCategory('Elektronik')" class="category-pill border border-white/10 px-6 py-2 rounded-full text-[10px] font-black uppercase whitespace-nowrap transition-all">Elektronik</button>
+            </div>
+
+            <div class="flex justify-between items-end mb-6 px-2">
+                <h2 class="font-black text-xl flex items-center gap-3 italic uppercase tracking-tighter"><i class="fa-solid fa-fire text-orange-500"></i> Katalog Utama</h2>
+            </div>
+            <div id="product-list" class="grid grid-cols-2 gap-4"></div>
+        </section>
+
+        <section id="chat-section" class="hidden animate-pop">
+            <h2 class="font-black text-xl mb-6 flex items-center gap-3 italic"><i class="fa-solid fa-comments text-orange-500"></i> CHAT OWNER</h2>
+            <div class="bg-[#1a1a1a] rounded-[2.5rem] border border-white/5 h-[60vh] flex flex-col overflow-hidden">
+                <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-4 flex flex-col"></div>
+                <div class="p-4 bg-black/20 flex gap-2 border-t border-white/5">
+                    <input type="text" id="chat-input" placeholder="Tulis pesan..." class="flex-1 bg-black/40 p-4 rounded-2xl outline-none text-sm focus:border-orange-500 border border-transparent transition-all">
+                    <button onclick="sendMessage()" class="bg-orange-500 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all">
+                        <i class="fa-solid fa-paper-plane text-white"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="cart-section" class="hidden space-y-5">
+            <h2 class="font-black text-xl mb-6 flex items-center gap-3 italic"><i class="fa-solid fa-basket-shopping text-orange-500"></i> PESANANMU</h2>
+            <div id="cart-list" class="space-y-4"></div>
+            <div id="cart-empty" class="text-center py-40 opacity-20">
+                <i class="fa-solid fa-cart-flatbed text-6xl mb-4 block"></i>
+                <p class="font-black uppercase tracking-[0.2em] text-[10px]">Belum ada pesanan</p>
+            </div>
+            <div id="cart-checkout" class="hidden mt-6 bg-[#1a1a1a] p-6 rounded-[2.5rem] border border-white/5">
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-[10px] font-black uppercase text-gray-500">Total Pembayaran</p>
+                    <p id="cart-total-price" class="text-lg font-black text-orange-500">Rp 0</p>
+                </div>
+                <button onclick="checkoutToTelegram()" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-500/20 active:scale-95 transition-all">
+                    BELI SEKARANG
+                </button>
+            </div>
+        </section>
+
+        <section id="profile-section" class="hidden animate-pop">
+            <div class="bg-[#1a1a1a] p-10 rounded-[3.5rem] shadow-2xl text-center relative overflow-hidden border border-white/5">
+                <div class="absolute top-0 left-0 w-full h-36 bg-gradient-to-br from-orange-500 to-orange-700"></div>
+                <div class="relative z-10">
+                    <div class="relative inline-block mt-4">
+                        <img id="user-avatar" src="" class="w-36 h-36 rounded-full border-[6px] border-[#1a1a1a] shadow-2xl object-cover">
+                        <label for="edit-avatar" class="absolute bottom-2 right-2 bg-orange-500 w-11 h-11 rounded-full text-white flex items-center justify-center cursor-pointer border-4 border-[#1a1a1a] shadow-lg">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                            <input type="file" id="edit-avatar" class="hidden" onchange="updateAvatar()">
+                        </label>
+                    </div>
+                    <h3 id="profile-name" class="text-2xl font-black mt-6 tracking-tight text-white uppercase flex items-center justify-center"></h3>
+                    <div id="profile-status-box" class="mt-2 mb-6">
+                        <p id="profile-status" class="owner-badge text-white text-[9px] font-black uppercase tracking-[0.4em] py-2.5 px-8 rounded-full inline-block shadow-lg"></p>
+                    </div>
+
+                    <div id="create-shop-container" class="mb-10 p-4 bg-black/40 rounded-3xl border border-white/5">
+                        <h4 class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-3">Vip Partner Shop</h4>
+                        <div id="shop-lock-status"></div>
+                    </div>
+
+                    <button onclick="logout()" class="w-full bg-red-500/5 text-red-500 py-5 rounded-[2rem] font-black flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all border border-red-500/20 italic tracking-widest text-xs">
+                        <i class="fa-solid fa-power-off"></i> KELUAR AKUN
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="product-modal" class="hidden fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm p-4 flex items-center justify-center">
+        <div class="bg-[#1a1a1a] w-full max-w-md rounded-[3rem] overflow-hidden border border-white/10 animate-pop max-h-[90vh] overflow-y-auto">
+            <img id="modal-img" src="" class="w-full h-72 object-cover">
+            <div class="p-8">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span id="modal-cat" class="text-[9px] font-black text-orange-500 uppercase tracking-widest">KATEGORI</span>
+                        <h2 id="modal-name" class="text-2xl font-black mt-1 uppercase italic tracking-tighter">NAMA PRODUK</h2>
+                        <p id="modal-id-display" class="text-[8px] text-gray-600 font-bold mt-1 uppercase"></p>
+                    </div>
+                    <button onclick="closeModal()" class="text-gray-500 hover:text-white transition-colors"><i class="fa-solid fa-circle-xmark text-2xl"></i></button>
+                </div>
+                <p id="modal-price" class="text-xl font-black text-orange-500 mt-2 italic">Rp 0</p>
+                <div class="mt-6">
+                    <h4 class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Deskripsi Produk</h4>
+                    <p id="modal-desc" class="text-sm text-gray-400 leading-relaxed"></p>
+                </div>
+                <div class="mt-8">
+                    <h4 class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Ulasan Pembeli (RNK)</h4>
+                    <div id="modal-reviews" class="space-y-3"></div>
+                </div>
+                <button id="modal-buy-btn" onclick="addToCartModal()" class="w-full bg-orange-500 text-white py-5 rounded-[2rem] font-black mt-8 shadow-xl shadow-orange-500/20 active:scale-95 transition-all">TAMBAH KE KERANJANG</button>
+            </div>
+        </div>
+    </div>
+
+    <nav id="bottom-nav" class="hidden fixed bottom-6 left-6 right-6 glass p-4 flex justify-around items-center max-w-md mx-auto z-50 rounded-[2.5rem] shadow-2xl shadow-black">
+        <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center gap-1 transition-all text-gray-500">
+            <i class="fa-solid fa-house-crack text-lg"></i>
+            <span class="text-[7px] font-black uppercase tracking-tighter">Home</span>
+        </button>
+        <button onclick="switchTab('chat')" id="nav-chat" class="flex flex-col items-center gap-1 transition-all text-gray-500">
+            <i class="fa-solid fa-comments text-lg"></i>
+            <span class="text-[7px] font-black uppercase tracking-tighter">Chat</span>
+        </button>
+        <button onclick="switchTab('cart')" id="nav-cart" class="relative flex flex-col items-center gap-1 transition-all text-gray-500">
+            <i class="fa-solid fa-basket-shopping text-lg"></i>
+            <span id="cart-badge" class="absolute -top-1 -right-1 bg-orange-500 text-white text-[7px] w-4 h-4 rounded-full flex items-center justify-center font-black border border-[#1a1a1a] hidden">0</span>
+            <span class="text-[7px] font-black uppercase tracking-tighter">Pesanan</span>
+        </button>
+        <button onclick="switchTab('profile')" id="nav-profile" class="flex flex-col items-center gap-1 transition-all text-gray-500">
+            <i class="fa-solid fa-user-gear text-lg"></i>
+            <span class="text-[7px] font-black uppercase tracking-tighter">Profil</span>
+        </button>
+    </nav>
+
+    <script>
+        const ownerIDs = ["persipk", "455610"];
+        let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+        let products = JSON.parse(localStorage.getItem('products')) || [];
+        let reviews = JSON.parse(localStorage.getItem('reviews')) || [];
+        let messages = JSON.parse(localStorage.getItem('messages')) || [];
+        let cart = JSON.parse(localStorage.getItem('cart')) || {}; 
+        let ordersHistory = JSON.parse(localStorage.getItem('ordersHistory')) || {}; 
+        let activeShops = JSON.parse(localStorage.getItem('activeShops')) || []; 
+        
+        let selectedCategory = 'Semua';
+        let currentModalProdId = null;
+        let authMode = 'login';
+        let selectedChatUser = null; 
+
+        function init() {
+            if (currentUser) {
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('bottom-nav').classList.remove('hidden');
+                document.getElementById('user-display-top').innerText = '@' + currentUser.username.toUpperCase();
+                updateCartBadge();
+                renderLeaderboard();
+                checkStockAlert();
+                switchTab('home');
+            }
+        }
+
+        function isUserOwner() {
+            return ownerIDs.includes(currentUser.username.toLowerCase()) || activeShops.includes(currentUser.username.toLowerCase());
+        }
+
+        function checkStockAlert() {
+            if(isUserOwner()) {
+                const outOfStock = products.some(p => parseInt(p.stock) <= 0);
+                document.getElementById('stock-alert').classList.toggle('hidden', !outOfStock);
+            }
+        }
+
+        function renderLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = '';
+            const sorted = Object.entries(ordersHistory)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+
+            if(sorted.length === 0) {
+                list.innerHTML = `<p class="text-[8px] text-gray-500 italic">Belum ada aktivitas transaksi.</p>`;
+                return;
+            }
+
+            sorted.forEach(([user, count], i) => {
+                const isOwner = ownerIDs.includes(user.toLowerCase()) || activeShops.includes(user.toLowerCase());
+                list.innerHTML += `
+                    <div class="flex items-center justify-between bg-black/20 p-2 rounded-xl border border-white/5">
+                        <div class="flex items-center gap-3">
+                            <span class="text-orange-500 font-black text-xs">#${i+1}</span>
+                            <span class="text-[10px] font-bold uppercase">@${user} ${isOwner ? '<i class="fa-solid fa-circle-check verified-badge"></i>' : ''}</span>
+                        </div>
+                        <span class="text-[9px] font-black text-gray-400 uppercase">${count} TRX</span>
+                    </div>`;
+            });
+        }
+
+        function resetDataTotal() {
+            if(!ownerIDs.includes(currentUser.username.toLowerCase())) return alert("Hanya Owner Utama!");
+            if(confirm("Hapus semua database toko?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function addManualTransaction() {
+            const user = document.getElementById('trx-user').value.trim().toLowerCase();
+            const prodId = document.getElementById('trx-prod-id').value;
+            const qty = parseInt(document.getElementById('trx-qty').value) || 0;
+
+            if(!user || !prodId || qty <= 0) return alert("Lengkapi data transaksi!");
+            
+            ordersHistory[user] = (ordersHistory[user] || 0) + qty;
+            localStorage.setItem('ordersHistory', JSON.stringify(ordersHistory));
+
+            alert(`Berhasil! Riwayat @${user} bertambah ${qty} transaksi.`);
+            renderLeaderboard();
+            document.getElementById('trx-user').value = '';
+            document.getElementById('trx-prod-id').value = '';
+            document.getElementById('trx-qty').value = '';
+        }
+
+        function handleAuth() {
+            const user = document.getElementById('tele-user').value.trim().toLowerCase();
+            const pass = document.getElementById('tele-pass').value.trim();
+            if(!user || !pass) return alert("Isi datanya!");
+            
+            if(authMode === 'register') {
+                if(users.some(u => u.username === user) || ownerIDs.includes(user)) return alert("Username ini sudah terdaftar!");
+                users.push({ username: user, password: pass, avatar: `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${user}` });
+                localStorage.setItem('users', JSON.stringify(users));
+                alert("Daftar Berhasil!"); toggleAuthMode('login');
+            } else {
+                const found = users.find(u => u.username === user);
+                const isMainOwner = (user === "persipk" && pass === "455610");
+                
+                if (isMainOwner) {
+                    currentUser = { username: user, avatar: `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${user}` };
+                } else if (found && found.password === pass) {
+                    currentUser = { username: found.username, avatar: found.avatar };
+                } else {
+                    return alert("Login Gagal! Username atau Password salah!");
+                }
+                
+                localStorage.setItem('loggedUser', JSON.stringify(currentUser));
+                location.reload();
+            }
+        }
+
+        function toggleAuthMode(mode) {
+            authMode = mode;
+            document.getElementById('btn-mode-login').className = mode === 'login' ? 'flex-1 py-3 rounded-xl font-bold bg-orange-500 text-white shadow-lg' : 'flex-1 py-3 rounded-xl font-bold text-gray-500';
+            document.getElementById('btn-mode-reg').className = mode === 'register' ? 'flex-1 py-3 rounded-xl font-bold bg-orange-500 text-white shadow-lg' : 'flex-1 py-3 rounded-xl font-bold text-gray-500';
+            document.getElementById('main-auth-btn').innerText = mode === 'login' ? 'Masuk Sekarang' : 'Daftar Akun Baru';
+        }
+
+        function uploadProduct() {
+            const id = document.getElementById('edit-id').value;
+            const name = document.getElementById('prod-name').value;
+            const price = document.getElementById('prod-price').value;
+            const stock = document.getElementById('prod-stock').value;
+            const category = document.getElementById('prod-category').value;
+            const desc = document.getElementById('prod-desc').value;
+            const fileInput = document.getElementById('prod-img');
+            
+            if(!name || !price) return alert("Wajib isi Nama & Harga!");
+
+            const saveAction = (imgData) => {
+                if(id) {
+                    const idx = products.findIndex(p => p.id == id);
+                    products[idx] = {...products[idx], name, price, stock, category, desc, img: imgData || products[idx].img};
+                } else {
+                    products.unshift({ id: Math.floor(1000 + Math.random() * 9000), name, price, stock, category, desc, img: imgData || `https://api.dicebear.com/7.x/shapes/svg?seed=${name}` });
+                }
+                localStorage.setItem('products', JSON.stringify(products));
+                resetAdminForm(); renderProducts(); checkStockAlert();
+            };
+
+            if (fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => saveAction(e.target.result);
+                reader.readAsDataURL(fileInput.files[0]);
+            } else { saveAction(null); }
+        }
+
+        function editProduct(id) {
+            const p = products.find(p => p.id == id);
+            document.getElementById('edit-id').value = p.id;
+            document.getElementById('prod-name').value = p.name;
+            document.getElementById('prod-price').value = p.price;
+            document.getElementById('prod-stock').value = p.stock;
+            document.getElementById('prod-category').value = p.category;
+            document.getElementById('prod-desc').value = p.desc;
+            document.getElementById('btn-save').innerText = "Update Produk";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function deleteProduct(id) {
+            if(confirm("Hapus produk ini secara permanen?")) {
+                products = products.filter(p => p.id != id);
+                localStorage.setItem('products', JSON.stringify(products));
+                renderProducts();
+            }
+        }
+
+        function filterCategory(cat) {
+            selectedCategory = cat;
+            document.querySelectorAll('.category-pill').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText.toLowerCase() === cat.toLowerCase());
+            });
+            renderProducts();
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('product-list');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const isOwner = isUserOwner();
+            container.innerHTML = '';
+            const filtered = products.filter(p => {
+                const matchCat = selectedCategory === 'Semua' || p.category === selectedCategory;
+                const matchSearch = p.name.toLowerCase().includes(search);
+                return matchCat && matchSearch;
+            });
+            
+            filtered.forEach(p => {
+                const isOutOfStock = parseInt(p.stock) <= 0;
+                container.innerHTML += `
+                    <div class="bg-[#1a1a1a] rounded-[2rem] overflow-hidden border border-white/5 shadow-xl relative group">
+                        ${isOwner ? `
+                        <div class="absolute top-2 right-2 flex gap-1 z-10">
+                            <button onclick="editProduct(${p.id})" class="bg-blue-500 w-7 h-7 rounded-full text-white text-[10px]"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteProduct(${p.id})" class="bg-red-500 w-7 h-7 rounded-full text-white text-[10px]"><i class="fa-solid fa-trash"></i></button>
+                        </div>` : ''}
+                        
+                        <div onclick="openModal(${p.id})">
+                            <img src="${p.img}" class="w-full h-36 object-cover ${isOutOfStock ? 'grayscale opacity-30' : ''}">
+                            <div class="p-4">
+                                <div class="flex justify-between items-start">
+                                    <span class="text-[8px] font-black text-orange-500 uppercase">${p.category || 'Umum'}</span>
+                                    <span class="text-[7px] font-bold text-gray-600">ID: ${p.id}</span>
+                                </div>
+                                <h3 class="font-black text-xs truncate uppercase mt-1">${p.name}</h3>
+                                <p class="text-orange-500 font-black text-[10px] mt-1 italic">Rp ${parseInt(p.price).toLocaleString('id-ID')}</p>
+                                ${isOutOfStock ? '<p class="text-[8px] text-red-500 font-black uppercase mt-1">HABIS</p>' : `<p class="text-[8px] text-gray-500 mt-1">Stok: ${p.stock}</p>`}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function openModal(id) {
+            const p = products.find(p => p.id == id);
+            currentModalProdId = id;
+            document.getElementById('modal-img').src = p.img;
+            document.getElementById('modal-name').innerText = p.name;
+            document.getElementById('modal-id-display').innerText = 'ID PRODUK: ' + p.id;
+            document.getElementById('modal-cat').innerText = p.category || 'Umum';
+            document.getElementById('modal-price').innerText = 'Rp ' + parseInt(p.price).toLocaleString('id-ID');
+            document.getElementById('modal-desc').innerText = p.desc || 'Tidak ada deskripsi.';
+            
+            const buyBtn = document.getElementById('modal-buy-btn');
+            if(parseInt(p.stock) <= 0) {
+                buyBtn.innerText = "STOK HABIS";
+                buyBtn.disabled = true;
+                buyBtn.classList.add('opacity-50', 'bg-gray-600');
+            } else {
+                buyBtn.innerText = "TAMBAH KE KERANJANG";
+                buyBtn.disabled = false;
+                buyBtn.classList.remove('opacity-50', 'bg-gray-600');
+            }
+
+            const prodReviews = reviews.filter(r => r.prodId == id);
+            const reviewContainer = document.getElementById('modal-reviews');
+            reviewContainer.innerHTML = prodReviews.length ? '' : '<p class="text-[10px] text-gray-600 italic">Belum ada ulasan untuk produk ini.</p>';
+            prodReviews.forEach(r => {
+                reviewContainer.innerHTML += `
+                    <div class="bg-black/30 p-4 rounded-2xl border border-white/5">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="w-2 h-2 rounded-full bg-orange-500"></div>
+                            <span class="text-[9px] font-black uppercase">@${r.user}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 italic">"${r.text}"</p>
+                    </div>`;
+            });
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('product-modal').classList.add('hidden'); }
+
+        function addToCartModal() {
+            const user = currentUser.username;
+            const pIdx = products.findIndex(p => p.id == currentModalProdId);
+            
+            if(products[pIdx].stock <= 0) return alert("Stok sudah habis!");
+
+            if(!cart[user]) cart[user] = {};
+            cart[user][currentModalProdId] = (cart[user][currentModalProdId] || 0) + 1;
+            
+            products[pIdx].stock = parseInt(products[pIdx].stock) - 1;
+            localStorage.setItem('products', JSON.stringify(products));
+            localStorage.setItem('cart', JSON.stringify(cart));
+
+            updateCartBadge();
+            checkStockAlert();
+            alert("Berhasil masuk keranjang!");
+            closeModal();
+            renderProducts();
+            if(document.getElementById('cart-section').classList.contains('hidden') === false) renderCartItems();
+        }
+
+        function renderCartItems() {
+            const list = document.getElementById('cart-list');
+            const userCart = cart[currentUser.username] || {};
+            const productIds = Object.keys(userCart);
+            list.innerHTML = '';
+            let total = 0;
+
+            if(productIds.length === 0) {
+                document.getElementById('cart-empty').classList.remove('hidden');
+                document.getElementById('cart-checkout').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('cart-empty').classList.add('hidden');
+            document.getElementById('cart-checkout').classList.remove('hidden');
+
+            productIds.forEach(id => {
+                const p = products.find(prod => prod.id == id);
+                if(!p) return;
+                const qty = userCart[id];
+                const subtotal = p.price * qty;
+                total += subtotal;
+
+                list.innerHTML += `
+                    <div class="bg-[#1a1a1a] p-4 rounded-3xl border border-white/5 flex items-center gap-4">
+                        <img src="${p.img}" class="w-16 h-16 rounded-2xl object-cover">
+                        <div class="flex-1">
+                            <h4 class="font-black text-xs uppercase truncate">${p.name}</h4>
+                            <p class="text-orange-500 font-black text-[10px]">Rp ${parseInt(p.price).toLocaleString('id-ID')}</p>
+                        </div>
+                        <div class="flex items-center gap-3 bg-black/40 p-2 rounded-xl border border-white/5">
+                            <button onclick="updateCartQty(${id}, -1)" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white"><i class="fa-solid fa-minus text-[10px]"></i></button>
+                            <span class="text-xs font-black w-4 text-center">${qty}</span>
+                            <button onclick="updateCartQty(${id}, 1)" class="w-6 h-6 flex items-center justify-center text-orange-500 hover:text-white"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                        </div>
+                    </div>`;
+            });
+
+            document.getElementById('cart-total-price').innerText = 'Rp ' + total.toLocaleString('id-ID');
+        }
+
+        function updateCartQty(prodId, change) {
+            const user = currentUser.username;
+            const pIdx = products.findIndex(p => p.id == prodId);
+            
+            if(change > 0 && products[pIdx].stock <= 0) return alert("Stok tidak mencukupi!");
+
+            cart[user][prodId] += change;
+            products[pIdx].stock -= change;
+
+            if(cart[user][prodId] <= 0) delete cart[user][prodId];
+
+            localStorage.setItem('cart', JSON.stringify(cart));
+            localStorage.setItem('products', JSON.stringify(products));
+            
+            updateCartBadge();
+            renderCartItems();
+            renderProducts();
+            checkStockAlert();
+        }
+
+        function checkoutToTelegram() {
+            const user = currentUser.username;
+            const userCart = cart[currentUser.username] || {};
+            const productIds = Object.keys(userCart);
+            if(productIds.length === 0) return;
+
+            let itemsDetail = [];
+            let total = 0;
+            let totalQty = 0;
+
+            productIds.forEach(id => {
+                const p = products.find(prod => prod.id == id);
+                const qty = userCart[id];
+                itemsDetail.push(`${p.name} (${qty}x)`);
+                total += (p.price * qty);
+                totalQty += qty;
+                
+                ordersHistory[user] = (ordersHistory[user] || 0) + qty;
+            });
+
+            const message = `halo, saya username @${user} membeli ${itemsDetail.join(', ')} berjumlah ${totalQty} dengan total Rp ${total.toLocaleString('id-ID')}, terimakasih kak`;
+            
+            localStorage.setItem('ordersHistory', JSON.stringify(ordersHistory));
+            
+            const telegramUrl = `https://t.me/persipk?text=${encodeURIComponent(message)}`;
+            
+            cart[user] = {};
+            localStorage.setItem('cart', JSON.stringify(cart));
+            
+            window.open(telegramUrl, '_blank');
+            location.reload();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if(!text) return;
+            const isMeOwner = isUserOwner();
+            messages.push({
+                from: currentUser.username,
+                to: isMeOwner ? selectedChatUser : ownerIDs[0],
+                text: text,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+            localStorage.setItem('messages', JSON.stringify(messages));
+            input.value = '';
+            renderChat();
+        }
+
+        function renderChat() {
+            const box = document.getElementById('chat-box');
+            const chatSection = document.getElementById('chat-section');
+            const chatInputArea = document.querySelector('#chat-section .bg-black\\/20');
+            const isMeOwner = isUserOwner();
+            const chatHeader = chatSection.querySelector('h2');
+            
+            chatHeader.innerHTML = isMeOwner ? `<i class="fa-solid fa-comments text-orange-500"></i> CHAT PEMBELI` : `<i class="fa-solid fa-comments text-orange-500"></i> CHAT OWNER`;
+            box.innerHTML = '';
+
+            if (isMeOwner && !selectedChatUser) {
+                chatInputArea.classList.add('hidden');
+                const uniqueUsers = [...new Set(messages.map(m => m.from === currentUser.username ? m.to : m.from))];
+                const customers = uniqueUsers.filter(u => u && !ownerIDs.includes(u.toLowerCase()) && !activeShops.includes(u.toLowerCase()));
+                if(customers.length === 0) {
+                    box.innerHTML = '<p class="text-center text-gray-500 mt-10">Belum ada pesan masuk.</p>';
+                    return;
+                }
+                customers.forEach(user => {
+                    box.innerHTML += `
+                        <div onclick="selectUserChat('${user}')" class="bg-white/5 p-4 rounded-2xl flex items-center gap-4 border border-white/5 active:scale-95 transition-all mb-2 cursor-pointer">
+                            <img src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${user}" class="w-10 h-10 rounded-full bg-orange-500/20">
+                            <div class="flex-1">
+                                <h4 class="font-black text-sm uppercase">@${user}</h4>
+                                <p class="text-[10px] text-gray-500">Klik untuk membalas</p>
+                            </div>
+                        </div>`;
+                });
+            } else {
+                chatInputArea.classList.remove('hidden');
+                const targetChat = isMeOwner ? selectedChatUser : ownerIDs[0];
+                if(isMeOwner) box.innerHTML = `<button onclick="selectedChatUser=null; renderChat()" class="text-orange-500 text-xs mb-4"><i class="fa-solid fa-arrow-left"></i> Kembali</button>`;
+                const filteredMessages = messages.filter(m => (m.from === currentUser.username && m.to === targetChat) || (m.from === targetChat && m.to === currentUser.username));
+                filteredMessages.forEach(m => {
+                    const isMe = m.from === currentUser.username;
+                    box.innerHTML += `<div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-4"><div class="${isMe ? 'bg-orange-500 text-white rounded-l-2xl rounded-tr-2xl' : 'bg-white/10 text-gray-200 rounded-r-2xl rounded-tl-2xl'} p-4 max-w-[80%] shadow-lg"><p class="text-sm font-medium">${m.text}</p></div></div>`;
+                });
+                box.scrollTop = box.scrollHeight;
+            }
+        }
+
+        function selectUserChat(user) { selectedChatUser = user; renderChat(); }
+
+        function switchTab(tab) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-nav'));
+            const isMeOwner = isUserOwner();
+            
+            if(tab === 'home') {
+                document.getElementById('shop-section').classList.remove('hidden');
+                document.getElementById('nav-home').classList.add('active-nav');
+                if(isMeOwner) document.getElementById('admin-section').classList.remove('hidden');
+                renderProducts();
+            } else if(tab === 'chat') {
+                document.getElementById('chat-section').classList.remove('hidden');
+                document.getElementById('nav-chat').classList.add('active-nav');
+                renderChat();
+            } else if(tab === 'cart') {
+                document.getElementById('cart-section').classList.remove('hidden');
+                document.getElementById('nav-cart').classList.add('active-nav');
+                renderCartItems();
+            } else {
+                document.getElementById('profile-section').classList.remove('hidden');
+                document.getElementById('nav-profile').classList.add('active-nav');
+                const isVerified = isMeOwner;
+                document.getElementById('profile-name').innerHTML = currentUser.username + (isVerified ? ' <i class="fa-solid fa-circle-check verified-badge"></i>' : '');
+                document.getElementById('profile-status').innerText = ownerIDs.includes(currentUser.username.toLowerCase()) ? 'Owner Official' : (activeShops.includes(currentUser.username.toLowerCase()) ? 'Shop Partner' : 'Customer Official');
+                document.getElementById('user-avatar').src = currentUser.avatar;
+                renderShopVipStatus();
+            }
+        }
+
+        function renderShopVipStatus() {
+            const container = document.getElementById('shop-lock-status');
+            const user = currentUser.username.toLowerCase();
+            const orderCount = ordersHistory[currentUser.username] || 0;
+            const isAlreadyOwner = isUserOwner();
+
+            if(isAlreadyOwner) {
+                container.innerHTML = `<p class="text-[10px] text-orange-500 font-bold italic">Fitur Toko Anda Sudah Aktif!</p>`;
+                return;
+            }
+
+            if(orderCount >= 25) {
+                container.innerHTML = `
+                    <button onclick="activateMyShop()" class="w-full bg-white text-black py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all">
+                        BUKA TOKO SEKARANG
+                    </button>`;
+            } else {
+                const sisa = 25 - orderCount;
+                container.innerHTML = `
+                    <div class="flex flex-col items-center gap-2 opacity-50">
+                        <i class="fa-solid fa-lock text-xs mb-1"></i>
+                        <p class="text-[9px] font-bold">Kumpulkan <span class="text-orange-500">${sisa} pesanan lagi</span> untuk buka toko!</p>
+                        <div class="w-full bg-white/5 h-1.5 rounded-full mt-1 overflow-hidden">
+                            <div class="bg-orange-500 h-full" style="width: ${(orderCount/25)*100}%"></div>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function activateMyShop() {
+            activeShops.push(currentUser.username.toLowerCase());
+            localStorage.setItem('activeShops', JSON.stringify(activeShops));
+            alert("Selamat! Toko Anda aktif. Sekarang Anda memiliki akses ke Panel Owner & Centang Biru!");
+            location.reload();
+        }
+
+        function resetAdminForm() {
+            document.getElementById('edit-id').value = '';
+            document.querySelectorAll('#admin-section input:not([type=file]), #admin-section textarea, #admin-section select').forEach(i => i.value = '');
+            document.getElementById('btn-save').innerText = "Simpan Produk";
+        }
+
+        function updateCartBadge() {
+            const userCart = cart[currentUser.username] || {};
+            const total = Object.values(userCart).reduce((a, b) => a + b, 0);
+            const badge = document.getElementById('cart-badge');
+            badge.innerText = total;
+            badge.classList.toggle('hidden', total === 0);
+        }
+
+        function updateAvatar() {
+            const file = document.getElementById('edit-avatar').files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentUser.avatar = e.target.result;
+                localStorage.setItem('loggedUser', JSON.stringify(currentUser));
+                document.getElementById('user-avatar').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function logout() { localStorage.removeItem('loggedUser'); location.reload(); }
+        init();
+    </script>
+</body>
+</html>
